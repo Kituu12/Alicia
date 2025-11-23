@@ -1,9 +1,5 @@
-// features/game/sambung_kata/sambung_kata.js
-
 const { Collection, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const mysql = require('mysql2/promise'); 
-
-// --- MAPPING STATUS GAME ---
 const GAME_STATUS = {
     LOBBY: 'LOBBY',
     ACTIVE: 'ACTIVE',
@@ -11,8 +7,6 @@ const GAME_STATUS = {
 };
 
 const activeGames = new Map();
-
-// --- KONFIGURASI DATABASE MYSQL ---
 const DB_CONFIG = {
     host: 'localhost',
     user: 'root',       
@@ -24,15 +18,8 @@ const DB_CONFIG = {
 };
 
 const pool = mysql.createPool(DB_CONFIG);
-
-// --- KONFIGURASI GAME ---
-const MAX_TURN_TIME_MS = 7000; // 7 DETIK
-const BOT_RESPONSE_DELAY = 2500; // Jeda Bot (2.5 detik)
-
-
-// *******************************************************************
-// *** FUNGSI UTILITAS DAN LOGIKA INTI GAME ***
-// *******************************************************************
+const MAX_TURN_TIME_MS = 7000;
+const BOT_RESPONSE_DELAY = 2500; 
 
 async function isKBBIWordValid(word) {
     const lowerWord = word.toLowerCase();
@@ -110,7 +97,6 @@ function endGameTimeout(message, game, capturedTurnId) {
     message.channel.send(`⏰ **WAKTU HABIS!** ❌\n\nPemain terakhir (**${lastPlayerName}**) gagal membalas dalam 7 detik.\n\nGame berakhir! Kata terakhir: **${game.kataTerakhir}**\n\n**Skor Akhir:**\n${skorAkhir || "Belum ada skor yang tercatat."}`);
 }
 
-// --- FUNGSI PENGHENTIAN GAME BERSIH ---
 async function stopGame(message, game, reason = 'Game/Lobby Sambung Kata dihentikan.') {
     if (!activeGames.has(message.channelId)) return;
     
@@ -119,11 +105,9 @@ async function stopGame(message, game, reason = 'Game/Lobby Sambung Kata dihenti
     activeGames.delete(message.channelId);
     
     if (game.lobbyMessageId) {
-        // Coba edit pesan lobby untuk menghapus tombol dan embed
         message.channel.messages.fetch(game.lobbyMessageId)
             .then(m => m.edit({ components: [], embeds: [], content: reason }))
             .catch(() => {
-                // Jika gagal fetch/edit, kirim pesan baru saja
                 message.channel.send(reason).catch(() => {});
             });
     } else {
@@ -131,7 +115,7 @@ async function stopGame(message, game, reason = 'Game/Lobby Sambung Kata dihenti
     }
 }
 
-async function updateLobbyMessage(game, hostId) { // Menerima hostId
+async function updateLobbyMessage(game, hostId) { 
     const playersList = Array.from(game.players.values())
         .map(user => `➡️ ${user.username}`)
         .join('\n');
@@ -152,18 +136,15 @@ async function updateLobbyMessage(game, hostId) { // Menerima hostId
     
     const isVSMode = game.mode === 'VS';
     
-    // Tombol Keluar diizinkan di SOLO dan VS
     const joinButton = new ButtonBuilder().setCustomId('sambung_join').setLabel('Bergabung').setStyle(ButtonStyle.Success).setDisabled(!isVSMode);
     const leaveButton = new ButtonBuilder().setCustomId('sambung_leave').setLabel('Keluar').setStyle(ButtonStyle.Danger).setDisabled(false); // Diaktifkan di Solo/VS
     const botStartButton = new ButtonBuilder().setCustomId('sambung_bot_start').setLabel('🤖 Bot Main Dulu').setStyle(ButtonStyle.Primary).setDisabled(isVSMode);
-    
     const row = new ActionRowBuilder().addComponents(joinButton, leaveButton, botStartButton);
 
     if (isVSMode) {
         const startGameButton = new ButtonBuilder().setCustomId('sambung_start_vs').setLabel('Mulai Game').setStyle(ButtonStyle.Primary).setDisabled(game.players.size < 2);
         row.addComponents(startGameButton);
         
-        // --- TOMBOL BATALKAN LOBBY (Hanya untuk host) ---
         const cancelButton = new ButtonBuilder()
             .setCustomId('sambung_cancel_lobby')
             .setLabel('Batalkan Lobby')
@@ -172,14 +153,12 @@ async function updateLobbyMessage(game, hostId) { // Menerima hostId
         
         const secondRow = new ActionRowBuilder().addComponents(cancelButton);
         return { embeds: [embedMessage], components: [row, secondRow] };
-        // --------------------------------------------------------
     }
     
     return { embeds: [embedMessage], components: [row] };
 }
 
 async function sendLobbyMessage(message, game) { 
-    // Meneruskan hostId ke updateLobbyMessage
     const messageOptions = await updateLobbyMessage(game, game.hostId); 
     
     if (!game.lobbyMessageId) {
@@ -250,9 +229,7 @@ async function handleLobbyInteraction(interaction, game) {
         return;
     } 
     
-    // --- PENANGANAN TOMBOL KELUAR (JOIN/LOBBY) ---
     if (interaction.customId === 'sambung_leave') {
-        // Izinkan tombol Keluar di mode VS (lobby) dan SOLO (lobby)
         if (game.mode !== 'VS' && game.mode !== 'SOLO') {
             return interaction.followUp({ content: 'Tombol ini hanya untuk mode VS atau SOLO.', ephemeral: true });
         }
@@ -263,17 +240,14 @@ async function handleLobbyInteraction(interaction, game) {
         
         game.players.delete(interaction.user.id);
         
-        // Di mode SOLO, jika pemain keluar, otomatis batalkan lobby karena hanya ada 1 pemain
         if (game.mode === 'SOLO') {
             await stopGame(interaction, game, `👋 Pemain (**${interaction.user.username}**) keluar. Lobby Solo dibatalkan.`);
             return;
         }
         
-        // Di mode VS, update lobby message
         await interaction.editReply(await updateLobbyMessage(game, game.hostId));
         return;
     } 
-    // --- AKHIR PENANGANAN TOMBOL KELUAR ---
     
     if (interaction.customId === 'sambung_bot_start' && game.mode === 'SOLO') {
         if (!game.players.has(interaction.user.id)) {
@@ -293,7 +267,6 @@ async function handleLobbyInteraction(interaction, game) {
         }
         await stopGame(interaction, game, `❌ Lobby dibatalkan oleh host (**${interaction.user.username}**).`);
     } else {
-        // Jika game sudah ACTIVE dan tombol lobby diklik, abaikan.
         if (game.status === GAME_STATUS.ACTIVE) {
             return interaction.followUp({ content: 'Game sudah dimulai, tombol tidak lagi berfungsi.', ephemeral: true });
         }
@@ -307,15 +280,10 @@ async function handleGameMessage(message, game) {
 
     const newWord = message.content.split(/\s+/)[0].toLowerCase().trim();
     if (!newWord || newWord.startsWith('!')) return; 
-    
-    // Validasi Pemain
     if (game.mode === 'VS' && !game.players.has(message.author.id)) return;
     if (game.mode === 'SOLO' && !game.players.has(message.author.id)) return;
-
-    // Validasi Panjang Kata
     if (newWord.length < 2) return message.reply('Kata minimal harus 2 karakter.');
-
-    // 🎯 VALIDASI SAMBUNGAN (FIX: Tambahkan setGameTimeout dan return)
+    
     const requiredLength = game.kataTerakhir.length >= 2 ? 2 : 1;
     const requiredString = game.kataTerakhir.slice(-requiredLength);
 
@@ -323,21 +291,16 @@ async function handleGameMessage(message, game) {
         setGameTimeout(message, game); 
         return message.reply(`Kata **${newWord}** harus dimulai dengan **${requiredString.toUpperCase()}**! Giliran tetap milik Kamu. Waktu 7 detik dimulai kembali.`);
     }
-
-    // 🎯 VALIDASI KATA SUDAH DIGUNAKAN (FIX: Tambahkan setGameTimeout dan return)
     if (game.kataDigunakan.has(newWord)) {
         setGameTimeout(message, game); 
         return message.reply(`Kata **${newWord}** sudah digunakan! Giliran tetap milik Kamu. Waktu 7 detik dimulai kembali.`);
     }
 
-    // 🎯 VALIDASI KBBI (FIX: Tambahkan setGameTimeout dan return)
     const isValid = await isKBBIWordValid(newWord);
     if (!isValid) {
         setGameTimeout(message, game); 
         return message.reply(`Kata **${newWord}** tidak ditemukan di KBBI! Giliran tetap milik Kamuu. Waktu 7 detik dimulai kembali.`);
     }
-
-    // --- Kata Valid, Update State ---
     
     if (game.timeoutRef) clearTimeout(game.timeoutRef);
     game.currentTurnId++;
@@ -357,7 +320,6 @@ async function handleGameMessage(message, game) {
         return message.channel.send(`✅ Kata diterima! **${newWord}** (${nextRequiredString}). Giliran berikutnya harus dimulai dengan **${nextRequiredString}**. Waktu 7 detik dimulai.`);
     }
 
-    // --- LOGIKA GILIRAN BOT (Hanya di mode SOLO) ---
     if (game.mode === 'SOLO') {
         const botResponse = await getBotResponse(game);
         await new Promise(resolve => setTimeout(resolve, BOT_RESPONSE_DELAY)); 
@@ -379,7 +341,6 @@ async function handleGameMessage(message, game) {
             
             return;
         } else {
-            // Bot Kalah
             activeGames.delete(message.channelId);
             const skorAkhir = Array.from(game.skorPemain.entries())
                 .map(([userId, score]) => {
@@ -390,11 +351,6 @@ async function handleGameMessage(message, game) {
         }
     }
 }
-
-
-// *******************************************************************
-// *** EKSPOR ********************************************************
-// *******************************************************************
 
 module.exports = {
     GAME_STATUS, 
