@@ -1,5 +1,3 @@
-// features/game/sambung_kata/index-sambung-kata.js
-
 const { Collection } = require('discord.js');
 const {
     GAME_STATUS, 
@@ -7,10 +5,9 @@ const {
     handleLobbyInteraction,
     handleGameMessage,
     sendLobbyMessage,
-    stopGame // <--- BARU DIIMPOR
+    stopGame
 } = require('./sambung_kata.js'); 
 
-// FUNGSI UTAMA UNTUK MEMPROSES COMMAND TEKS (!sambung)
 async function handleSambungKataCommand(message, args) {
     const channelId = message.channelId;
     let game = activeGames.get(channelId);
@@ -18,17 +15,14 @@ async function handleSambungKataCommand(message, args) {
     const command = args[0] ? args[0].toLowerCase() : null;
     const mode = args[1] ? args[1].toLowerCase() : null;
      
-    // Command !sambung stop
     if (command === 'stop') {
         if (!game) return message.reply('Tidak ada game yang aktif/di lobby.');
 
-        // Menggunakan fungsi utilitas stopGame untuk membersihkan game
         await stopGame(message, game, 'Game Sambung Kata dihentikan.');
         
         return message.reply('Game Sambung Kata dihentikan.');
     }
      
-    // Command !sambung kata solo/vs
     if (command === 'kata') {
         if (game && game.status !== GAME_STATUS.STOPPED) return message.reply(`Game sudah berjalan! Status: ${game.status}`);
         
