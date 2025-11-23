@@ -1,15 +1,21 @@
 {
   "name": "alicia",
   "version": "1.0.0",
-  // ... (bagian lain)
+  "description": "",
+  "main": "index.js",
   "scripts": {
-    "start": "node index.js"
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  // ... (bagian lain)
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
   "dependencies": {
-    // Pastikan express ada di sini
-    "express": "^4.19.2",  
+    "@discordjs/voice": "^0.19.0",
     "discord.js": "^14.25.1",
+    "dotenv": "^17.2.3",
+    "mysql2": "^3.15.3",
+    "node-fetch": "^2.7.0",
+    "ytdl-core": "^4.11.5"
   }
 }
