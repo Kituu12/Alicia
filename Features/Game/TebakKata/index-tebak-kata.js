@@ -1,5 +1,3 @@
-// features/game/tebak_kata/index-tebak-kata.js
-
 const {
     GAME_STATUS,
     activeGames,
@@ -10,13 +8,11 @@ const {
     MAX_ATTEMPTS
 } = require('./tebak_kata.js'); 
 
-// --- HANDLE COMMAND (!tebak kata/stop) ---
 async function handleTebakKataCommand(message, args) {
     const channelId = message.channelId;
     let game = activeGames.get(channelId);
     const command = args[0] ? args[0].toLowerCase() : null;
     
-    // Command memulai: !tebak kata
     if (command === 'kata') {
         if (game && game.status === GAME_STATUS.ACTIVE) {
             message.delete().catch(() => {});
@@ -28,9 +24,8 @@ async function handleTebakKataCommand(message, args) {
         const secretWord = await getRandomWord();
         if (!secretWord) return message.reply('❌ Database Error. Cek koneksi ke MySQL/KBBI.');
 
-        message.delete().catch(() => {}); // Hapus command user
+        message.delete().catch(() => {});
 
-        // Setup Hint (Buka 1-2 huruf acak)
         const initialGuessed = new Set();
         const uniqueLetters = [...new Set(secretWord.split(''))];
         const numberOfHints = Math.max(1, Math.floor(secretWord.length / 4));
@@ -55,7 +50,6 @@ async function handleTebakKataCommand(message, args) {
         return;
     }
     
-    // Command berhenti: !tebak stop
     if (command === 'stop') {
         if (!game) return message.reply('Tidak ada game yang aktif.').then(msg => {
             setTimeout(() => msg.delete().catch(() => {}), 3000);
@@ -75,7 +69,6 @@ async function handleTebakKataCommand(message, args) {
         });
     }
     
-    // Command bantuan: !tebak bantuan
     if (command === 'bantuan') {
         message.delete().catch(() => {});
         return message.reply('Cara main:\n1. Ketik `!tebak kata` untuk memulai.\n2. Untuk menebak, ketik huruf atau kata langsung di chat (tanpa prefix `!`).\n3. **Visual Feedback:** 🟩=Correct, 🟨=Near, ⬛=Wrong.').then(msg => {
@@ -84,7 +77,6 @@ async function handleTebakKataCommand(message, args) {
     }
 }
 
-// --- HANDLE TEBAKAN (Pesan Biasa) ---
 async function handleTebakKataGuess(message) {
     const channelId = message.channelId;
     const game = activeGames.get(channelId);
@@ -93,24 +85,20 @@ async function handleTebakKataGuess(message) {
     
     const input = message.content.trim().toLowerCase();
     
-    // Validasi input: tidak kosong, tidak dimulai dengan '!', dan hanya berisi huruf
     if (!input || input.startsWith('!') || !/^[a-z]+$/.test(input)) return; 
-
-    // Hapus Pesan Pemain
+    
     try {
         await message.delete();
     } catch (error) {
         console.log(`⚠️ Gagal hapus pesan di ${message.channel.name}. Pastikan bot memiliki izin 'Manage Messages'.`);
     }
-    
-    // Proses Tebakan
+
     const result = processGuess(message, game, input);
     
     if (result && result.statusMsg) {
         if (result.logEntry) {
             game.logs.push(result.logEntry);
         } else {
-            // Ini biasanya pesan seperti "Huruf sudah dipakai" atau "Panjang kata salah"
             game.logs.push(`⚠️ ${result.statusMsg}`);
         }
 
