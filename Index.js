@@ -1,11 +1,6 @@
-// index.js (Jembatan Utama Bot)
 const fs = require('fs'); 
 const path = require('path');
 const { Client, GatewayIntentBits, Collection } = require('discord.js');
-
-// ❌ TOKEN YANG DI-HARDCODE TELAH DIHAPUS.
-// Bot sekarang akan mencari token di Variabel Lingkungan bernama DISCORD_TOKEN
-
 const client = new Client({ 
     intents: [
         GatewayIntentBits.Guilds,
@@ -17,11 +12,8 @@ const client = new Client({
 client.commands = new Collection();
 const featuresPath = path.join(__dirname, 'features');
 
-/**
- * Memuat command secara dinamis dari folder features
- */
+
 function loadCommands(dir) {
-    // Cek apakah folder ada sebelum membaca
     if (!fs.existsSync(dir)) return;
 
     const files = fs.readdirSync(dir);
@@ -52,14 +44,13 @@ client.once('ready', () => {
     client.user.setActivity('Games: !tebak | !sambung', { type: 'PLAYING' });
 });
 
-// --- EVENT: messageCreate (JEMBATAN UTAMA) ---
+// --- EVENT: messageCreate
 client.on('messageCreate', async message => {
     if (message.author.bot) return;
 
     const prefix = '!';
     const content = message.content.trim();
     
-    // 1. JALUR COMMAND (Pesan diawali '!')
     if (content.startsWith(prefix)) {
         const args = content.slice(prefix.length).split(/\s+/);
         const commandName = args.shift().toLowerCase();
@@ -76,7 +67,6 @@ client.on('messageCreate', async message => {
         return; 
     } 
     
-    // 2. JALUR JEMBATAN GAME (Pesan tanpa '!')
     const sambungCommand = client.commands.get('sambung');
     if (sambungCommand && sambungCommand.execute) {
         await sambungCommand.execute(message, []);
@@ -88,11 +78,9 @@ client.on('messageCreate', async message => {
     }
 });
 
-// --- EVENT: interactionCreate (Jembatan Tombol) ---
 client.on('interactionCreate', async interaction => {
     if (!interaction.isButton()) return;
     
-    // Handler Tombol Sambung Kata
     if (interaction.customId.startsWith('sambung_')) {
         await interaction.deferUpdate().catch(() => {});
         const sambungCommand = client.commands.get('sambung');
@@ -102,6 +90,4 @@ client.on('interactionCreate', async interaction => {
     }
 });
 
-// --- LOGIN BOT ---
-// Bot akan mencari Variabel Lingkungan bernama DISCORD_TOKEN
 client.login(process.env.DISCORD_TOKEN);
