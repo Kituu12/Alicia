@@ -3,6 +3,9 @@ const fs = require('fs');
 const path = require('path');
 const { Client, GatewayIntentBits, Collection } = require('discord.js');
 
+// ❌ TOKEN YANG DI-HARDCODE TELAH DIHAPUS.
+// Bot sekarang akan mencari token di Variabel Lingkungan bernama DISCORD_TOKEN
+
 const client = new Client({ 
     intents: [
         GatewayIntentBits.Guilds,
@@ -18,6 +21,7 @@ const featuresPath = path.join(__dirname, 'features');
  * Memuat command secara dinamis dari folder features
  */
 function loadCommands(dir) {
+    // Cek apakah folder ada sebelum membaca
     if (!fs.existsSync(dir)) return;
 
     const files = fs.readdirSync(dir);
@@ -69,7 +73,7 @@ client.on('messageCreate', async message => {
                 message.channel.send('Terjadi kesalahan saat menjalankan perintah itu.');
             }
         }
-        return;
+        return; 
     } 
     
     // 2. JALUR JEMBATAN GAME (Pesan tanpa '!')
@@ -99,4 +103,5 @@ client.on('interactionCreate', async interaction => {
 });
 
 // --- LOGIN BOT ---
+// Bot akan mencari Variabel Lingkungan bernama DISCORD_TOKEN
 client.login(process.env.DISCORD_TOKEN);
