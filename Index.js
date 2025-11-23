@@ -3,10 +3,6 @@ const fs = require('fs');
 const path = require('path');
 const { Client, GatewayIntentBits, Collection } = require('discord.js');
 
-// ⚠️ PERINGATAN: Jangan bagikan token ini ke publik.
-// Sebaiknya gunakan process.env.DISCORD_TOKEN jika sudah di hosting.
-const DISCORD_TOKEN = "MTQ0MTY5ODI3NDMyMjE1NzY0OA.Gu9dpN.dWn_SLqyFoymJxeABZeqXZ96DAG9p4GY2b4Ktw";
-
 const client = new Client({ 
     intents: [
         GatewayIntentBits.Guilds,
@@ -22,7 +18,6 @@ const featuresPath = path.join(__dirname, 'features');
  * Memuat command secara dinamis dari folder features
  */
 function loadCommands(dir) {
-    // Cek apakah folder ada sebelum membaca
     if (!fs.existsSync(dir)) return;
 
     const files = fs.readdirSync(dir);
@@ -74,22 +69,16 @@ client.on('messageCreate', async message => {
                 message.channel.send('Terjadi kesalahan saat menjalankan perintah itu.');
             }
         }
-        return; // Stop, jangan lanjut ke pengecekan game
+        return;
     } 
     
     // 2. JALUR JEMBATAN GAME (Pesan tanpa '!')
-    // Bagian ini meneruskan pesan biasa ke logika game masing-masing
-    
-    // A. Jembatan ke Game Sambung Kata (Existing)
     const sambungCommand = client.commands.get('sambung');
     if (sambungCommand && sambungCommand.execute) {
-        // Asumsi sambung kata logic ada di execute handle default
         await sambungCommand.execute(message, []);
     }
 
-    // B. Jembatan ke Game Tebak Kata (BARU DITAMBAHKAN)
     const tebakCommand = client.commands.get('tebak');
-    // Kita cek apakah fungsi handleTebakKataGuess sudah diexport di file index-tebak-kata.js
     if (tebakCommand && tebakCommand.handleTebakKataGuess) {
         await tebakCommand.handleTebakKataGuess(message);
     }
@@ -107,8 +96,7 @@ client.on('interactionCreate', async interaction => {
             await sambungCommand.handleInteraction(interaction);
         }
     }
-    
-    // Jika nanti Tebak Kata punya tombol (misal tombol Hint), tambahkan di sini.
 });
 
-client.login(DISCORD_TOKEN);
+// --- LOGIN BOT ---
+client.login(process.env.DISCORD_TOKEN);
